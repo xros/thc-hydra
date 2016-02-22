@@ -6,7 +6,6 @@ char *webtarget = NULL;
 char *slash = "/";
 char *http_buf = NULL;
 int webport, freemischttp = 0;
-
 int http_auth_mechanism = AUTH_BASIC;
 
 int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, FILE * fp, char *type) {
@@ -14,6 +13,8 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
   char *login, *pass, buffer[500], buffer2[500];
   char *header = "";            /* XXX TODO */
   char *ptr, *fooptr;
+  int complete_line = 0;
+  char tmpreplybuf[1024] = "", *tmpreplybufptr;
 
   if (strlen(login = hydra_get_next_login()) == 0)
     login = empty;
@@ -152,9 +153,29 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
   if (http_buf != NULL)
     free(http_buf);
   http_buf = hydra_receive_line(s);
-  while (http_buf != NULL && strstr(http_buf, "HTTP/1.") == NULL) {
-    free(http_buf);
-    http_buf = hydra_receive_line(s);
+  complete_line = 0;
+  tmpreplybuf[0] = 0;
+
+  while (http_buf != NULL && (strstr(http_buf, "HTTP/1.") == NULL || (index(http_buf, '\n') == NULL && complete_line == 0))) {
+    if (debug) printf("il: %d, tmpreplybuf: %s, http_buf: %s\n", complete_line, tmpreplybuf, http_buf);
+    if (tmpreplybuf[0] == 0 && strstr(http_buf, "HTTP/1.") != NULL) {
+      strncpy(tmpreplybuf, http_buf, sizeof(tmpreplybuf) - 1);
+      tmpreplybuf[sizeof(tmpreplybuf) - 1] = 0;
+      free(http_buf);
+      http_buf = hydra_receive_line(s);
+    } else if (tmpreplybuf[0] != 0) {
+      complete_line = 1;
+      if ((tmpreplybufptr = malloc(strlen(tmpreplybuf) + strlen(http_buf) + 1)) != NULL) {
+        strcpy(tmpreplybufptr, tmpreplybuf);
+        strcat(tmpreplybufptr, http_buf);
+        free(http_buf);
+        http_buf = tmpreplybufptr;
+        if (debug) printf("http_buf now: %s\n", http_buf);
+      }
+    } else {
+      free(http_buf);
+      http_buf = hydra_receive_line(s);
+    }
   }
 
   //if server cut the connection, just exit cleanly or 
@@ -168,7 +189,9 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
   if (debug)
     hydra_report(stderr, "S:%s\n", http_buf);
 
-  ptr = ((char *) index(http_buf, ' ')) + 1;
+  ptr = ((char *) index(http_buf, ' '));
+  if (ptr != NULL)
+    ptr++;
   if (ptr != NULL && (*ptr == '2' || *ptr == '3' || strncmp(ptr, "403", 3) == 0 || strncmp(ptr, "404", 3) == 0)) {
     hydra_report_found_host(port, ip, "www", fp);
     hydra_completed_pair_found();
@@ -178,7 +201,7 @@ int start_http(int s, char *ip, int port, unsigned char options, char *miscptr, 
     }
   } else {
     if (ptr != NULL && *ptr != '4')
-      fprintf(stderr, "[WARNING] Unusual return code: %c for %s:%s\n", (char) *(index(http_buf, ' ') + 1), login, pass);
+      fprintf(stderr, "[WARNING] Unusual return code: %.3s for %s:%s\n", (char) *ptr, login, pass);
 
     //the first authentication type failed, check the type from server header
     if ((hydra_strcasestr(http_buf, "WWW-Authenticate: Basic") == NULL) && (http_auth_mechanism == AUTH_BASIC)) {

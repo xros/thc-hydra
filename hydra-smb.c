@@ -900,7 +900,7 @@ unsigned long SMBSessionSetup(int s, char *szLogin, char *szPassword, char *misc
   unsigned char *NTLMv2hash = NULL;
   unsigned char *NTLMhash = NULL;
   unsigned char *LMhash = NULL;
-  unsigned char unicodeLogin[32 * 2];
+//  unsigned char unicodeLogin[32 * 2];
   int j;
   char bufReceive[512];
   int nReceiveBufferSize = 0;
@@ -1375,7 +1375,7 @@ void service_smb(char *ip, int sp, unsigned char options, char *miscptr, FILE * 
     case 1:                    /* connect and service init function */
       if (sock >= 0)
         sock = hydra_disconnect(sock);
-//      usleep(300000);
+//      sleepn(300);
 
       if (port != 0) {
         sock = hydra_connect_tcp(ip, port);

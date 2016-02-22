@@ -896,7 +896,7 @@ SSL_CERT *ssl_cert_read(uint8 * data, uint32 len) {
   return d2i_X509(NULL, (D2I_X509_CONST unsigned char **) &data, len);
 }
 
-void ssl_cert_free(SSL_CERT * cert) {
+static void ssl_cert_free(SSL_CERT * cert) {
   X509_free(cert);
 }
 
@@ -2452,6 +2452,9 @@ int start_rdp(int s, char *ip, int port, unsigned char options, char *miscptr, F
 void service_rdp(char *ip, int sp, unsigned char options, char *miscptr, FILE * fp, int port) {
   int run = 1, next_run = 1;
   int myport = PORT_RDP;
+
+  if (port != 0)
+    myport = port;
 
   hydra_register_socket(sp);
   if (memcmp(hydra_get_next_pair(), &HYDRA_EXIT, sizeof(HYDRA_EXIT)) == 0)
