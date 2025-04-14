@@ -2233,15 +2233,15 @@ if test "$ac_test_CFLAGS" = set; then
   CFLAGS=$ac_save_CFLAGS
 elif test $ac_cv_prog_cc_g = yes; then
   if test "$GCC" = yes; then
-    CFLAGS="-g -O2"
+    CFLAGS="-g -O2 -fcommon -Wl,--allow-multiple-definition"
   else
-    CFLAGS="-g"
+    CFLAGS="-g -fcommon -Wl,--allow-multiple-definition"
   fi
 else
   if test "$GCC" = yes; then
-    CFLAGS="-O2"
+    CFLAGS="-O2 -fcommon -Wl,--allow-multiple-definition"
   else
-    CFLAGS=
+    CFLAGS="-fcommon -Wl,--allow-multiple-definition"
   fi
 fi
 echo "$as_me:$LINENO: checking for $CC option to accept ANSI C" >&5
@@ -2391,7 +2391,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
   for ac_declaration in \
-   '' \
+   '#include <stdlib.h>' \
    'extern "C" void std::exit (int) throw (); using std::exit;' \
    'extern "C" void std::exit (int); using std::exit;' \
    'extern "C" void exit (int) throw ();' \
@@ -3192,7 +3192,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
   for ac_declaration in \
-   '' \
+   '#include <stdlib.h>' \
    'extern "C" void std::exit (int) throw (); using std::exit;' \
    'extern "C" void std::exit (int); using std::exit;' \
    'extern "C" void exit (int) throw ();' \
@@ -3797,8 +3797,8 @@ main ()
   for (i = 0; i < 256; i++)
     if (XOR (islower (i), ISLOWER (i))
 	|| toupper (i) != TOUPPER (i))
-      exit(2);
-  exit (0);
+      return 2;
+  return 0;
 }
 _ACEOF
 rm -f conftest$ac_exeext
